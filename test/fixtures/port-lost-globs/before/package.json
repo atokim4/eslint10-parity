@@ -1,0 +1,2 @@
+{ "name": "fixture-port-lost-globs", "private": true, "type": "module",
+  "scripts": { "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.ts,.cts,.vue" } }

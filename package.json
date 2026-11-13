@@ -1,0 +1,52 @@
+{
+  "name": "eslint10-parity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Proves an ESLint 9 -> 10 upgrade did not silently change what gets linted: per-file lint coverage, resolved config and findings, diffed before vs after.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Sunnatulla E",
+  "bin": {
+    "eslint10-parity": "dist/cli.mjs"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "engines": "npm ci --prefix engines/v9 --no-audit --no-fund && npm ci --prefix engines/v10 --no-audit --no-fund",
+    "check": "npm run typecheck && npm run build && npm test"
+  },
+  "files": [
+    "dist",
+    "engines/v9/package.json",
+    "engines/v9/package-lock.json",
+    "engines/v10/package.json",
+    "engines/v10/package-lock.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint10",
+    "flat-config",
+    "migration",
+    "upgrade",
+    "renovate",
+    "ci"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atokim4/eslint10-parity.git"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/semver": "7.8.0",
+    "esbuild": "0.28.2",
+    "semver": "7.8.6",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
+}

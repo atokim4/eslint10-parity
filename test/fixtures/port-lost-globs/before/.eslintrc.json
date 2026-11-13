@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "env": { "browser": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022, "sourceType": "module" },
+  "rules": { "no-console": "error", "no-unused-vars": "error", "eqeqeq": "error" },
+  "overrides": [
+    { "files": ["*.ts", "*.cts"], "parser": "@typescript-eslint/parser" },
+    { "files": ["*.vue"], "parser": "vue-eslint-parser" }
+  ]
+}

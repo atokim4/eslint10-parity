@@ -1,0 +1,87 @@
+name: eslint10-parity
+description: Fails a pull request when an ESLint upgrade silently stops linting files, drops rules or loses findings, by linting the base and head checkouts and diffing them.
+author: Sunnatulla E
+branding:
+  icon: check-square
+  color: purple
+
+inputs:
+  base-ref:
+    description: Git ref to compare against. Defaults to the pull request base branch.
+    required: false
+    default: ""
+  working-directory:
+    description: Folder with the package.json to lint, relative to the repository root.
+    required: false
+    default: .
+  install-command:
+    description: Command that installs dependencies in each checkout. "auto" picks npm ci, pnpm install --frozen-lockfile or yarn from the lockfile.
+    required: false
+    default: auto
+  args:
+    description: ESLint command line to run on both sides instead of the package.json lint script, e.g. "eslint src --ext .ts".
+    required: false
+    default: ""
+  fail-on:
+    description: "Fail at this impact or above: high, medium, low or never."
+    required: false
+    default: high
+
+outputs:
+  status:
+    description: "ok, changed, broken or inconclusive."
+  silent:
+    description: "true when high-impact changes happened while the lint exit code did not get worse."
+  report:
+    description: Path of the Markdown report.
+
+runs:
+  using: composite
+  steps:
+    - name: Check out the base revision
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref || github.base_ref }}
+      run: |
+        if [ -z "$BASE_REF" ]; then
+          echo "::error::No base ref: run on pull_request or set base-ref." >&2
+          exit 2
+        fi
+        git fetch --no-tags --depth=1 origin "$BASE_REF"
+        git worktree add --detach "$RUNNER_TEMP/e10p-base" FETCH_HEAD
+
+    - name: Install dependencies (base and head)
+      shell: bash
+      env:
+        INSTALL: ${{ inputs.install-command }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        for dir in "$RUNNER_TEMP/e10p-base/$WORKDIR" "$GITHUB_WORKSPACE/$WORKDIR"; do
+          echo "::group::install in $dir"
+          (cd "$dir" && bash "$GITHUB_ACTION_PATH/action/install.sh" "$INSTALL")
+          echo "::endgroup::"
+        done
+
+    - name: Compare ESLint runs
+      id: compare
+      shell: bash
+      env:
+        WORKDIR: ${{ inputs.working-directory }}
+        LINT_ARGS: ${{ inputs.args }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        report="$RUNNER_TEMP/eslint10-parity.md"
+        json="$RUNNER_TEMP/eslint10-parity.json"
+        set +e
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" compare \
+          --before "$RUNNER_TEMP/e10p-base/$WORKDIR" --after "$GITHUB_WORKSPACE/$WORKDIR" \
+          ${LINT_ARGS:+--args "$LINT_ARGS"} --fail-on "$FAIL_ON" --md "$report" --json "$json"
+        code=$?
+        set -e
+        if [ -f "$report" ]; then
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          node -e 'const d = require(process.argv[1]).diff.verdict; console.log(`status=${d.status}\nsilent=${d.silent}`)' "$json" >> "$GITHUB_OUTPUT"
+        fi
+        echo "report=$report" >> "$GITHUB_OUTPUT"
+        git -C "$GITHUB_WORKSPACE" worktree remove --force "$RUNNER_TEMP/e10p-base" || true
+        exit $code

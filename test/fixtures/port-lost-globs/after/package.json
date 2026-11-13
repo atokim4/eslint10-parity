@@ -1,0 +1,2 @@
+{ "name": "fixture-port-lost-globs", "private": true, "type": "module",
+  "scripts": { "lint": "eslint ." } }

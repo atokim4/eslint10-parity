@@ -1,0 +1,2 @@
+{ "name": "fixture-lost-eslintignore", "private": true,
+  "scripts": { "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ." } }
